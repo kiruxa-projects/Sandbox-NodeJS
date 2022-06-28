@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Почта с тегами</title>
+ <meta charset='utf-8'>
+ <style>
+	.Page {
+	 font-family: Arial;
+	 font-size: 12px;
+	 margin: 0;
+	 padding: 0;
+	 color: #2f2d33;
+	}
+
+	.Logo {
+	 font-size: 24px;
+	 padding: 12px;
+	 margin: 0;
+	}
+
+	.Main {
+	 display: flex;
+	}
+
+	.Tags {
+	 width: 25%;
+	 background-color: #fffae5;
+	 padding: 6px;
+	}
+
+	.Tags_dropzone {
+	 background-color: #ffedba;
+	}
+
+	.Tags_dragovered {
+	 background-color: #ffd98e;
+	}
+
+	.Tags_dragovered * {
+	 pointer-events: none;
+	}
+
+	.Tag {
+	 background-color: #ffc062;
+	 color: #592400;
+	 margin: 6px;
+	 padding: 6px;
+	 display: inline-block;
+	}
+
+	.Tag_dragged {
+	 background-color: #ff9100;
+	}
+
+	.Tag_removed {
+	 display: none;
+	}
+
+	.Letters {
+	 width: 100%;
+	 background-color: #91cfff;
+	}
+
+	.Letters_dropzone {
+	 background-color: #4da0ff;
+	}
+
+	.Letter {
+	 display: flex;
+	 color: #00244d;
+	}
+
+	.Letter_dragovered {
+	 background-color: #006fed;
+	}
+
+	.Letter_dragovered * {
+	 pointer-events: none;
+	}
+
+	.Letter__Title {
+	 margin: 12px;
+	}
+ </style>
+</head>
+
+<body class="Page">
+<script>
+ let data = window.data || {
+	tags: {
+	 '1': 'важное',
+	 '2': 'личное',
+	 '3': 'рабочее',
+	 '4': 'Проект X',
+	 '5': 'Проект Y'
+	},
+	letters: [
+	 {
+		id: '1',
+		title: 'Приглашение на день рождения',
+		tags: ['1', '2']
+	 },
+	 {
+		id: '2',
+		title: 'Ответ на ваш комментарий',
+		tags: ['2']
+	 },
+	 {
+		id: '3',
+		title: 'Резюме последней встречи про X',
+		tags: ['3', '4']
+	 },
+	 {
+		id: '4',
+		title: 'Расчётный лист',
+		tags: ['1', '3']
+	 },
+	 {
+		id: '5',
+		title: 'Нужна помощь с Y',
+		tags: ['3', '5']
+	 },
+	 {
+		id: '6',
+		title: 'Регулярная рассылка для клиентов',
+		tags: []
+	 }
+	]
+ }
+
+ let lastEnteredLetter = -1
+ let currentLetter = -1
+
+ function onTagDragStart(e) {
+	const FROM_LETTER_ID = Number.parseInt(e.dataset.fromLetter)
+	const ID = e.dataset.tagId
+	const LETTERS_AREA = document.getElementsByClassName("Letters")[0]
+	const ALL_LETTERS = Array.from(LETTERS_AREA.children)
+	const TAGS_AREA = document.getElementsByClassName("Tags")[0]
+	currentLetter = FROM_LETTER_ID
+
+	e.classList.add("Tag_dragged")
+	LETTERS_AREA.classList.add("Letters_dropzone")
+	if (FROM_LETTER_ID !== -1)
+	 TAGS_AREA.classList.add("Tags_dropzone")
+
+	ALL_LETTERS.forEach((e) => {
+	 const letterId = Number.parseInt(e.dataset.letterId)
+	 const letterObj = data.letters.find((e) => e.id == letterId)
+	 if (letterObj.tags.indexOf(ID + "") === -1) {
+		e.classList.add("Letter_dragovered")
+	 }
+	})
+
+ }
+
+ function onTagDragStop(e) {
+	const ID = e.dataset.tagId
+	const LETTERS_AREA = document.getElementsByClassName("Letters")[0]
+	const TAGS_AREA = document.getElementsByClassName("Tags")[0]
+	const ALL_LETTERS = Array.from(LETTERS_AREA.children)
+	const FROM_LETTER_ID = Number.parseInt(e.dataset.fromLetter)
+
+
+	e.classList.remove("Tag_dragged")
+	LETTERS_AREA.classList.remove("Letters_dropzone")
+	TAGS_AREA.classList.remove("Tags_dropzone")
+
+	ALL_LETTERS.forEach((e) => {
+	 e.classList.remove("Letter_dragovered")
+	})
+
+	if (lastEnteredLetter >= 0) {
+	 const TO_LETTER = data.letters.find((e) => e.id == lastEnteredLetter)
+	 if(!TO_LETTER.tags.find((e)=>e==ID)){
+		TO_LETTER.tags.push(ID + "")
+	 }else{
+		return
+	 }
+	}
+
+	if (lastEnteredLetter != -1) {
+	 const FROM_LETTER = data.letters.find((e) => e.id == FROM_LETTER_ID)
+	 if (FROM_LETTER)
+		FROM_LETTER.tags = FROM_LETTER.tags.filter((e) => e != ID)
+	}
+
+	document.body.innerHTML = buildHtml(data);
+ }
+
+ function mapAndJoin(a, f, s = '') {
+	return a.map(f).join(s)
+ }
+
+ function enterIntoLetter(e) {
+	lastEnteredLetter = e.dataset.letterId
+ }
+
+ function enterIntoTagsArea(e) {
+	if (currentLetter !== -1)
+	 e.classList.add("Tags_dragovered")
+	lastEnteredLetter = -2
+ }
+
+ function leaveFromTagsArea(e) {
+	e.classList.remove("Tags_dragovered")
+ }
+
+ function buildHtml(data) {
+	return `
+      <div class="Main">
+        <div class="Tags" ondragenter="enterIntoTagsArea(this)" ondragleave="leaveFromTagsArea(this)">
+          ${mapAndJoin(
+	 Object.entries(data.tags),
+	 ([id, title]) => buildTagHtml(id, title, -1))}
+        </div>
+        <div class="Letters">
+          ${mapAndJoin(
+	 data.letters,
+	 ({id, title, tags}) => `
+              <div class="Letter" data-letter-id="${id}" ondragenter="enterIntoLetter(this)">
+                <div class="Letter__Title">${title}</div>
+                ${mapAndJoin(tags, (l) => buildTagHtml(l, data.tags[l], id))}
+              </div>
+            `)}
+        </div>
+      </div>
+    `
+ }
+
+ function buildTagHtml(id, title, fromLetter) {
+	return `<div class="Tag" data-tag-id="${id}" draggable="true" ondragstart="onTagDragStart(this)" ondragend="onTagDragStop(this)" data-from-letter="${fromLetter}">${title}</div>`
+ }
+
+ document.body.innerHTML = buildHtml(data);
+ window.onSolutionReady && window.onSolutionReady();
+</script>
+</body>
+</html>

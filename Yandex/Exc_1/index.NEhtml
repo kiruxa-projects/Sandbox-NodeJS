@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <title>Title</title>
+
+ <style>
+	body{
+	}
+	.root {
+	 background-color: antiquewhite;
+	 width: 900px;
+	}
+
+	.el {
+	 background-color: aqua;
+	 padding: 25px;
+	 font-size: 25px;
+	 border: 5px red solid;
+	 border-radius: 25px;
+	}
+ </style>
+
+
+ <script>
+	window.onload = () => {
+	 renderWaterfall(document.getElementsByClassName("root")[0], 4, 10)
+	}
+
+
+	function renderWaterfall(rootNode, columnCount, elementGap) {
+	 const ELEMS = Array.from(rootNode.children)
+
+	 const PADDING_TOP = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('padding-top'))
+	 const PADDING_LEFT = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('padding-left'))
+
+	 const ROOT_PADDING_TOP = Number.parseInt(window.getComputedStyle(rootNode, null).getPropertyValue('padding-top'))
+	 const ROOT_PADDING_LEFT = Number.parseInt(window.getComputedStyle(rootNode, null).getPropertyValue('padding-left'))
+
+	 const MARGIN_TOP = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('margin-top'))
+	 const MARGIN_LEFT = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('margin-left'))
+
+	 const BORDER_LEFT = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('border-left'))
+	 const BORDER_TOP = Number.parseInt(window.getComputedStyle(ELEMS[0], null).getPropertyValue('border-top'))
+
+	 const ELEM_WIDTH = rootNode.offsetWidth / columnCount - elementGap * (columnCount - 1) / columnCount
+	 const PARSED_GAP = Number.parseInt(elementGap)
+
+	 const ROOT_OFFSET_TOP = rootNode.offsetTop
+
+	 const BUFF_ELEM = document.createElement("div")
+	 BUFF_ELEM.style.width=rootNode.offsetWidth;
+
+	 function getColumnsHeight() {
+		let arr = []
+		for (let i = 0; i < columnCount; i++) arr.push(0)
+
+		for (let i = 0; i < columnCount; i++) {
+		 const elems = Array.from(document.getElementsByName(i + "column"))
+		 elems.forEach((e) => {
+			arr[i] += e.offsetHeight + PARSED_GAP
+		 })
+		 if (elems.length > 0) {
+			arr[i] += elems[0].offsetTop
+		 }
+
+		}
+		return arr
+	 }
+
+	 let i = 0;
+	 ELEMS.forEach((e, current) => {
+		if (i === columnCount) i = 0
+
+		let min = [-1, -1]
+		getColumnsHeight().forEach((j, k) => {
+		 if (min[0] === -1 || min[0] > j) {
+			min[0] = j
+			min[1] = k
+		 }
+		})
+
+		e.style.width = (ELEM_WIDTH - PADDING_LEFT * 2 - BORDER_LEFT * 2 - MARGIN_LEFT * 2 - ROOT_PADDING_LEFT) + "px"
+		if(columnCount===1){
+		 e.style.width = (ELEM_WIDTH - PADDING_LEFT * 2 - BORDER_LEFT * 2 - MARGIN_LEFT * 2 - ROOT_PADDING_LEFT*2) + "px"
+		}
+		e.style.position = "absolute"
+		if (min[1] > 0) {
+		 e.style.left = ELEMS[0].offsetLeft - MARGIN_LEFT + min[1] * ELEM_WIDTH + (PARSED_GAP * min[1]) - ROOT_PADDING_LEFT + "px"
+		} else {
+		 e.style.left = ELEMS[0].offsetLeft + MARGIN_LEFT * (min[1] - 1) + min[1] * ELEM_WIDTH + (PARSED_GAP * min[1]) + "px"
+		}
+		e.setAttribute("name", (min[1] + "column"))
+		if (current >= columnCount) {
+		 e.style.top = min[0] + MARGIN_TOP + "px"
+		}
+		i++;
+	 })
+
+
+	let max=[-1,-1]
+	 getColumnsHeight().forEach((j, k) => {
+		if (max[0] === -1 || max[0] < j) {
+		 max[0] = j
+		 max[1] = k
+		}
+	 })
+	 BUFF_ELEM.style.height=(max[0])+"px"
+	 rootNode.appendChild(BUFF_ELEM)
+	 return 1
+	}
+ </script>
+
+</head>
+<body>
+<div class="root">
+ <div class="el">У каждого объявления есть свои стили</div>
+ <div class="el">Их не нужно менять</div>
+ <div class="el">Каждое объявление должно быть свободным по высоте</div>
+ <div class="el">А вот ширину нужно будет выставить</div>
+ <div class="el">Ширину элемента root, при необходимости вы можете определить, но в тестах она может быть разная</div>
+
+</div>
+</body>
+</html>
